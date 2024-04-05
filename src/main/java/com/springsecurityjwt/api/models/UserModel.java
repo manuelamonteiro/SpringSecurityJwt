@@ -23,6 +23,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class UserModel implements UserDetails {
+
+	public UserModel(String login, String password, UserRoleEnum role) {
+		this.login = login;
+		this.password = password;
+		this.role = role;
+	}
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long id;
@@ -33,7 +40,6 @@ public class UserModel implements UserDetails {
 	@NotBlank
 	private String password;
 
-	@NotBlank
 	private UserRoleEnum role;
 
 	@Override
@@ -45,7 +51,7 @@ public class UserModel implements UserDetails {
 		} else {
 			return List.of(new SimpleGrantedAuthority("ROLE_USER"));
 		}
-		
+
 	}
 
 	@Override
