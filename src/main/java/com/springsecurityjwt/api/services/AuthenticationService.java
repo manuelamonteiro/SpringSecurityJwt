@@ -1,6 +1,5 @@
 package com.springsecurityjwt.api.services;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.springsecurityjwt.api.dtos.AuthenticationDTO;
 import com.springsecurityjwt.api.dtos.RegisterDTO;
 import com.springsecurityjwt.api.exceptions.LoginNotFoundException;
+import com.springsecurityjwt.api.infra.security.TokenService;
 import com.springsecurityjwt.api.models.UserModel;
 import com.springsecurityjwt.api.repositories.UserRepository;
 
@@ -18,21 +18,23 @@ public class AuthenticationService {
 
 	private final AuthenticationManager authenticationManager;
 	private UserRepository userRepository;
+	private TokenService tokenService;
 
-	AuthenticationService(AuthenticationManager authenticationManager, UserRepository userRepository) {
+	AuthenticationService(AuthenticationManager authenticationManager, UserRepository userRepository,
+			TokenService tokenService) {
 		this.authenticationManager = authenticationManager;
 		this.userRepository = userRepository;
+		this.tokenService = tokenService;
 	}
 
-	public ResponseEntity<Object> loginService(AuthenticationDTO body) {
+	public String loginService(AuthenticationDTO body) {
 		var usernamePassword = new UsernamePasswordAuthenticationToken(body.getLogin(), body.getPassword());
-		this.authenticationManager.authenticate(usernamePassword);
+		var auth = this.authenticationManager.authenticate(usernamePassword);
 
-		return ResponseEntity.ok().build();
+		return tokenService.generateToken((UserModel) auth.getPrincipal());
 	}
 
-	public ResponseEntity<Object> registerService(RegisterDTO dto) {
-
+	public UserModel registerService(RegisterDTO dto) {
 		UserDetails user = userRepository.findByLogin(dto.getLogin());
 
 		if (user != null) {
@@ -42,9 +44,7 @@ public class AuthenticationService {
 		String encryptedPassword = new BCryptPasswordEncoder().encode(dto.getPassword());
 		UserModel newUser = new UserModel(dto.getLogin(), encryptedPassword, dto.getRole());
 
-		this.userRepository.save(newUser);
-
-		return ResponseEntity.ok().build();
+		return this.userRepository.save(newUser);
 	}
 
 }
